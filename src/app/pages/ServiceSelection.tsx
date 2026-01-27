@@ -249,7 +249,7 @@ export const ServiceSelection = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Car">Car</SelectItem>
-                      <SelectItem value="Bike">Bike</SelectItem>
+                      <SelectItem value="Bus">Bus</SelectItem>
                       <SelectItem value="Truck">Truck</SelectItem>
                     </SelectContent>
                   </Select>

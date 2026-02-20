@@ -16,6 +16,7 @@ export const ServiceSelection = () => {
   const { user, setServiceData, logout } = useAppContext();
 
   const [selectedService, setSelectedService] = useState<ServiceType>(null);
+  const [amount, setAmount] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const [fastagData, setFastagData] = useState({
@@ -43,28 +44,30 @@ export const ServiceSelection = () => {
       return;
     }
 
-    if (!fastagData.vehicleNumber.trim()) {
-      newErrors.vehicleNumber = 'Vehicle number is required';
-    } else if (!validateVehicleNumber(fastagData.vehicleNumber)) {
-      newErrors.vehicleNumber = 'Invalid vehicle number format (MH12AB1234)';
-    }
+    if (!fastagData.vehicleNumber.trim())
+      newErrors.vehicleNumber = 'Vehicle number required';
+    else if (!validateVehicleNumber(fastagData.vehicleNumber))
+      newErrors.vehicleNumber = 'Invalid format (MH12AB1234)';
 
-    if (!fastagData.vehicleType) {
-      newErrors.vehicleType = 'Vehicle type is required';
-    }
+    if (!fastagData.vehicleType)
+      newErrors.vehicleType = 'Select vehicle type';
 
-    if (!fastagData.registeredMobile.trim()) {
-      newErrors.registeredMobile = 'Mobile number is required';
-    } else if (!validateMobile(fastagData.registeredMobile)) {
+    if (!fastagData.registeredMobile.trim())
+      newErrors.registeredMobile = 'Mobile number required';
+    else if (!validateMobile(fastagData.registeredMobile))
       newErrors.registeredMobile = 'Invalid mobile number';
-    }
+
+    if (!amount)
+      newErrors.amount = 'Enter recharge amount';
+    else if (Number(amount) < 50)
+      newErrors.amount = 'Minimum recharge ₹50';
 
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length === 0) {
       setServiceData({
         type: 'fastag',
-        amount: 500,
+        amount: Number(amount),
         ...fastagData,
       });
       navigate('/payment');
@@ -118,11 +121,11 @@ export const ServiceSelection = () => {
             </div>
             <h3 className="text-lg font-bold">FasTag</h3>
             <p className="text-sm text-gray-600 mb-3">Recharge your vehicle FasTag</p>
-            <span className="text-2xl font-bold">₹500</span>
+            <span className="text-sm text-gray-500">Click to enter amount</span>
           </motion.div>
         </div>
 
-        {/* Error */}
+        {/* Service Error */}
         {errors.service && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
             <XCircle className="w-5 h-5 text-red-600" />
@@ -136,18 +139,24 @@ export const ServiceSelection = () => {
             <h3 className="text-lg font-bold mb-4">FasTag Details</h3>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+              {/* Vehicle Number */}
               <div>
                 <Label>Vehicle Number</Label>
                 <Input
                   placeholder="MH12AB1234"
                   value={fastagData.vehicleNumber}
                   onChange={(e) =>
-                    setFastagData({ ...fastagData, vehicleNumber: e.target.value.toUpperCase() })
+                    setFastagData({
+                      ...fastagData,
+                      vehicleNumber: e.target.value.toUpperCase()
+                    })
                   }
                 />
                 {errors.vehicleNumber && <p className="text-xs text-red-500">{errors.vehicleNumber}</p>}
               </div>
 
+              {/* Vehicle Type */}
               <div>
                 <Label>Vehicle Type</Label>
                 <Select
@@ -166,23 +175,43 @@ export const ServiceSelection = () => {
                 {errors.vehicleType && <p className="text-xs text-red-500">{errors.vehicleType}</p>}
               </div>
 
+              {/* Mobile */}
               <div>
                 <Label>Registered Mobile</Label>
                 <Input
                   placeholder="1234567890"
                   value={fastagData.registeredMobile}
                   onChange={(e) =>
-                    setFastagData({ ...fastagData, registeredMobile: e.target.value })
+                    setFastagData({
+                      ...fastagData,
+                      registeredMobile: e.target.value
+                    })
                   }
                 />
                 {errors.registeredMobile && <p className="text-xs text-red-500">{errors.registeredMobile}</p>}
               </div>
+
             </div>
 
-            <div className="mt-4 p-4 bg-blue-50 rounded-lg flex justify-between">
+            {/* Amount Input */}
+            <div className="mt-4 p-4 bg-blue-50 rounded-lg flex justify-between items-center">
               <span>Total Amount</span>
-              <span className="text-xl font-bold">₹500</span>
+
+              <div className="flex items-center gap-2">
+                <span className="text-lg font-bold">₹</span>
+                <input
+                  type="number"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  placeholder="Enter amount"
+                  className="w-32 px-3 py-2 border rounded-lg text-right font-bold text-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                />
+              </div>
             </div>
+
+            {errors.amount && (
+              <p className="text-xs text-red-500 mt-1">{errors.amount}</p>
+            )}
           </motion.div>
         )}
 
@@ -193,6 +222,7 @@ export const ServiceSelection = () => {
             onClick={() => {
               setSelectedService(null);
               setFastagData({ vehicleNumber: '', vehicleType: '', registeredMobile: '' });
+              setAmount('');
               setErrors({});
             }}
             className="flex-1"

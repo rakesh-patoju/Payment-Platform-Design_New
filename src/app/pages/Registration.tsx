@@ -49,12 +49,16 @@ export const Registration = () => {
       confirmPassword: '',
     };
 
-    if (!formData.name.trim()) newErrors.name = 'Name is required';
-    if (!formData.email.trim()) newErrors.email = 'Email is required';
+    if (!formData.name.trim())
+      newErrors.name = 'Name is required';
+
+    if (!formData.email.trim())
+      newErrors.email = 'Email is required';
     else if (!validateEmail(formData.email))
       newErrors.email = 'Please enter a valid email';
 
-    if (!formData.phone.trim()) newErrors.phone = 'Phone number is required';
+    if (!formData.phone.trim())
+      newErrors.phone = 'Phone number is required';
     else if (!validatePhone(formData.phone))
       newErrors.phone = 'Enter a valid 10-digit number';
 
@@ -66,11 +70,37 @@ export const Registration = () => {
     else if (formData.password !== formData.confirmPassword)
       newErrors.confirmPassword = 'Passwords do not match';
 
+    // 🔥 Check duplicate user
+    const existingUsers =
+      JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+
+    const duplicateUser = existingUsers.find(
+      (u: any) =>
+        u.email === formData.email || u.phone === formData.phone
+    );
+
+    if (duplicateUser) {
+      newErrors.email = 'Email or phone already registered';
+    }
+
     setErrors(newErrors);
 
     if (!Object.values(newErrors).some(Boolean)) {
-      registerUser(formData);
+
+      // Remove confirmPassword before storing
+      const { confirmPassword, ...userToStore } = formData;
+
+      const updatedUsers = [...existingUsers, userToStore];
+
+      localStorage.setItem(
+        'registeredUsers',
+        JSON.stringify(updatedUsers)
+      );
+
+      registerUser(userToStore);
+
       setSuccessMessage(true);
+
       setTimeout(() => navigate('/login'), 2000);
     }
   };
@@ -120,7 +150,7 @@ export const Registration = () => {
               {[
                 { id: 'name', label: 'Full Name', placeholder: 'Enter your full name' },
                 { id: 'email', label: 'Email Address', placeholder: 'yourmail@example.com' },
-                { id: 'phone', label: 'Phone Number', placeholder: '+9123456890' },
+                { id: 'phone', label: 'Phone Number', placeholder: '9876543210' },
               ].map(({ id, label, placeholder }) => (
                 <div key={id}>
                   <Label>{label}</Label>
@@ -162,6 +192,12 @@ export const Registration = () => {
                     {showPassword ? <EyeOff /> : <Eye />}
                   </button>
                 </div>
+                {errors.password && (
+                  <p className="text-red-500 text-sm mt-1 flex gap-1">
+                    <XCircle className="w-4 h-4" />
+                    {errors.password}
+                  </p>
+                )}
               </div>
 
               {/* CONFIRM PASSWORD */}
@@ -187,6 +223,12 @@ export const Registration = () => {
                     {showConfirmPassword ? <EyeOff /> : <Eye />}
                   </button>
                 </div>
+                {errors.confirmPassword && (
+                  <p className="text-red-500 text-sm mt-1 flex gap-1">
+                    <XCircle className="w-4 h-4" />
+                    {errors.confirmPassword}
+                  </p>
+                )}
               </div>
 
               <Button
@@ -209,6 +251,7 @@ export const Registration = () => {
               </span>
             </p>
           </div>
+
         </div>
       </motion.div>
     </div>

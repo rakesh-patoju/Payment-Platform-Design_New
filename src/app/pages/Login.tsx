@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '@/app/context/AppContext';
 import { Logo } from '@/app/components/Logo';
@@ -10,13 +10,25 @@ import { motion } from 'motion/react';
 
 export const Login = () => {
   const navigate = useNavigate();
-  const { registeredUsers, setUser, setIsLoggedIn } = useAppContext();
+  const { setUser, setIsLoggedIn } = useAppContext();
+
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
+
   const [formData, setFormData] = useState({
     emailOrPhone: '',
     password: '',
   });
+
   const [error, setError] = useState('');
+
+  // 🔥 Auto-fill credentials on page load
+  useEffect(() => {
+    const remembered = localStorage.getItem('rememberedCredentials');
+    if (remembered) {
+      setFormData(JSON.parse(remembered));
+    }
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,17 +39,36 @@ export const Login = () => {
       return;
     }
 
-    const user = registeredUsers.find(
-      (u) =>
+    // 🔥 Always fetch latest users from localStorage
+    const storedUsers =
+      JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+
+    const user = storedUsers.find(
+      (u: any) =>
         (u.email === formData.emailOrPhone ||
           u.phone === formData.emailOrPhone) &&
         u.password === formData.password
     );
 
     if (user) {
+
+      // Save logged in user
+      localStorage.setItem('loggedInUser', JSON.stringify(user));
+
+      // Save credentials only if rememberMe is checked
+      if (rememberMe) {
+        localStorage.setItem(
+          'rememberedCredentials',
+          JSON.stringify(formData)
+        );
+      } else {
+        localStorage.removeItem('rememberedCredentials');
+      }
+
       setUser(user);
       setIsLoggedIn(true);
       navigate('/services');
+
     } else {
       setError('Invalid credentials');
     }
@@ -64,23 +95,6 @@ export const Login = () => {
 
           {/* HEADER */}
           <div className="text-center mb-10">
-            <div className="inline-flex items-center justify-center w-16 h-16
-              bg-gradient-to-r from-blue-500 to-purple-600 rounded-full mb-4">
-              <svg
-                className="w-8 h-8 text-white"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
-                />
-              </svg>
-            </div>
-
             <h2 className="text-3xl font-bold text-[#0f172a]">
               Welcome Back
             </h2>
@@ -96,9 +110,9 @@ export const Login = () => {
             </div>
           )}
 
-          {/* FORM */}
           <form onSubmit={handleSubmit} className="space-y-6 max-w-xl mx-auto">
 
+            {/* Email / Phone */}
             <div>
               <Label>Email or Phone Number</Label>
               <Input
@@ -111,6 +125,7 @@ export const Login = () => {
               />
             </div>
 
+            {/* Password */}
             <div>
               <Label>Password</Label>
               <div className="relative">
@@ -133,6 +148,19 @@ export const Login = () => {
               </div>
             </div>
 
+            {/* Remember Me */}
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={() => setRememberMe(!rememberMe)}
+              />
+              <span className="text-sm text-[#64748b]">
+                Remember Me
+              </span>
+            </div>
+
+            {/* Submit */}
             <Button
               type="submit"
               className="w-full py-6 text-lg text-white
